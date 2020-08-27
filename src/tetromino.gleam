@@ -3,14 +3,17 @@ import gleam/int
 import gleam/list
 import gleam/result
 import gleam/string
-import gleam/iodata
+import gleam/string_builder
 import tetromino/piece
 import tetromino/board
 
+pub external fn stdin_read_all() -> Result(String, Nil) =
+  "tetromino_native" "stdin_read_all"
+
 fn parse_input(input) {
   input
-  |> string.split(_, ",")
-  |> list.traverse(_, piece.parse)
+  |> string.split(",")
+  |> list.try_map(piece.parse)
 }
 
 fn flip(f) {
@@ -20,38 +23,39 @@ fn flip(f) {
 pub fn play_single_game(input) {
   input
   |> parse_input
-  |> result.map(_, list.fold(_, board.new(), flip(board.play_round)))
-  |> result.map(_, board.height)
+  |> result.map(list.fold(_, board.new(), flip(board.play_round)))
+  |> result.map(board.height)
 }
 
 pub fn play_tetris(input) {
   input
-  |> string.split(_, "\n")
-  |> list.filter(_, fn(i) { i != "" })
-  |> list.traverse(_, fn(i) { play_single_game(i) })
+  |> string.split("\n")
+  |> list.filter(fn(i) { i != "" })
+  |> list.try_map(fn(i) { play_single_game(i) })
 }
 
-external fn halt_program(Int) -> Nil = "erlang" "halt"
+external fn halt_program(Int) -> Nil =
+  "erlang" "halt"
 
 pub fn main(_argv) {
   let conclusion =
-    io.stdin_read_all()
-    |> result.map_error(_, fn(_) { "Unable to read from stdin" })
-    |> result.then(_, fn(i) { play_tetris(i) })
-    |> result.map(_, fn(results) {
+    stdin_read_all()
+    |> result.map_error(fn(_) { "Unable to read from stdin" })
+    |> result.then(fn(i) { play_tetris(i) })
+    |> result.map(fn(results) {
       results
-      |> list.map(_, int.to_string)
-      |> list.intersperse(_, "\n")
-      |> iodata.from_strings
-      |> iodata.append(_, "\n")
-      |> iodata.to_string
+      |> list.map(int.to_string)
+      |> list.intersperse("\n")
+      |> string_builder.from_strings
+      |> string_builder.append("\n")
+      |> string_builder.to_string
     })
 
   case conclusion {
     Ok(height) -> io.print(height)
 
     Error(reason) -> {
-      io.write(string.append(reason, "\n"), io.stderr())
+      io.println(reason)
       halt_program(1)
     }
   }

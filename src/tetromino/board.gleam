@@ -1,22 +1,21 @@
 import gleam/bitwise
 
-fn columns() {
-  10
-}
+const columns = 10
 
-fn max_height() {
-  100
-}
+const max_height = 100
 
-external fn pow(Int, Int) -> Float = "math" "pow"
-external fn floor(Float) -> Int = "erlang" "floor"
+external fn pow(Int, Int) -> Float =
+  "math" "pow"
+
+external fn floor(Float) -> Int =
+  "erlang" "floor"
 
 fn power(a, b) {
   floor(pow(a, b))
 }
 
 fn full_bottom_row() {
-  power(2, columns()) - 1
+  power(2, columns) - 1
 }
 
 // Create a new board with no pieces places
@@ -27,12 +26,12 @@ pub fn new() {
 // Lower pieces on a board by a number of rows, dropping any rows that are
 // pushed below row zero.
 pub fn lower_by_rows(board, rows) {
-  bitwise.shift_right(board, rows * columns())
+  bitwise.shift_right(board, rows * columns)
 }
 
 // Raise piece on a board.
 pub fn raise_by_rows(board, rows) {
-  bitwise.shift_left(board, rows * columns())
+  bitwise.shift_left(board, rows * columns)
 }
 
 // Merge pieces in two boards. Does not check for collisions.
@@ -60,13 +59,14 @@ pub fn fold_bottom(board, from init, with reduce) {
 
 // Filter out any rows in a board for which a predicate is not True
 pub fn filter(board, with predicate) {
-  let struct(_, filtered) = fold_bottom(board, struct(0, new()), fn(row, acc) {
-    let struct(index, board) = acc
+  let reduce = fn(row, acc) {
+    let tuple(index, inner_board) = acc
     case predicate(row) {
-      False -> struct(index, board)
-      True -> struct(index + 1, merge(board, raise_by_rows(row, index)))
+      False -> tuple(index, inner_board)
+      True -> tuple(index + 1, merge(inner_board, raise_by_rows(row, index)))
     }
-  })
+  }
+  let tuple(_, filtered) = fold_bottom(board, tuple(0, new()), reduce)
   filtered
 }
 
@@ -100,7 +100,10 @@ fn drop_piece(board, piece) {
 fn count_height(board, row_count) {
   case board {
     0 -> row_count
-    _ -> board |> lower_by_rows(_, 1) |> count_height(_, row_count + 1)
+    _ -> {
+      let lowered = lower_by_rows(board, 1)
+      count_height(lowered, row_count + 1)
+    }
   }
 }
 
@@ -112,7 +115,7 @@ pub fn height(board) {
 // it has landed
 pub fn play_round(board, piece) {
   piece
-  |> raise_by_rows(_, max_height())
+  |> raise_by_rows(max_height)
   |> drop_piece(board, _)
   |> remove_complete_rows
 }

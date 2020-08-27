@@ -5,48 +5,48 @@ import gleam/bitwise
 
 // We're using a little endian integer representation while the document uses
 // big endian, so the pieces are flipped compared to the images in the document.
-
-// 0000000011
-// 0000000011
+//
+// 11
+// 11
 pub fn q() {
-  3075
+  0b0000000011_0000000011
 }
 
-// 0000000110
-// 0000000011
+// 11
+//  11
 pub fn s() {
-  6147
+  0b0000000110_0000000011
 }
 
-// 0000000011
-// 0000000110
+//  11
+// 11
 pub fn z() {
-  3078
+  0b0000000011_0000000110
 }
 
-// 0000000111
-// 0000000010
+// 111
+//  1
 pub fn t() {
-  7170
+  0b0000000111_0000000010
 }
 
-// 0000001111
+// 1111
 pub fn i() {
-  15
+  0b0000001111
 }
 
-// 0000000010
-// 0000000010
-// 0000000011
+// 1
+// 1
+// 11
 pub fn j() {
-  2099203
+  0b0000000010_0000000010_0000000011
 }
 
-// 0000000001
-// 0000000001
-// 0000000011
+//  1
+//  1
+// 11
 pub fn l() {
-  1049603
+  0b0000000001_0000000001_0000000011
 }
 
 fn parse_piece(char) {
@@ -65,16 +65,14 @@ fn parse_piece(char) {
 fn parse_offset(offset) {
   offset
   |> int.parse
-  |> result.map_error(_, fn(_) {
-    string.append("Invalid piece offset ", offset)
-  })
+  |> result.map_error(fn(_) { string.append("Invalid piece offset ", offset) })
 }
 
-external fn split_position(String) -> Result(struct(String, String), String)
-  = "tetromino_native" "split_position"
+external fn split_position(String) -> Result(tuple(String, String), String) =
+  "tetromino_native" "split_position"
 
-external fn trim(String) -> String
-  = "string" "trim"
+external fn trim(String) -> String =
+  "string" "trim"
 
 // Parse a piece positioned in a column from an input of a letter kind and a
 // column offset, i.e. I2
@@ -87,12 +85,14 @@ pub fn parse(input) {
   input
   |> trim
   |> split_position
-  |> result.then(_, fn(input) {
-    let struct(kind, offset) = input
+  |> result.then(fn(input) {
+    let tuple(kind, offset) = input
     offset
     |> parse_offset
-    |> result.then(_, fn(offset) {
-      kind |> parse_piece |> result.map(_, bitwise.shift_left(_, offset))
+    |> result.then(fn(offset) {
+      kind
+      |> parse_piece
+      |> result.map(bitwise.shift_left(_, offset))
     })
   })
 }
