@@ -1,5 +1,7 @@
 # tetromino
 
+A little game of Tetris! Though currently without graphics I'm afraid.
+
 To build and run this program you will need
 [Gleam](https://gleam.run/getting-started/installing-gleam.html),
 [Erlang](https://gleam.run/getting-started/installing-erlang.html) and the
